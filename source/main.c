@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "parser.h"
 
 int main(int argc, char **argv) {
   if (2 != argc) {
@@ -14,6 +17,10 @@ int main(int argc, char **argv) {
 
     return 1;
   }
+
+  Parser *parser = CreateParserFromStream(stream);
+
+  free(parser);
 
   if (EOF == fclose(stream)) {
     perror("I/O error when closing the stream");
