@@ -3,60 +3,67 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define CONCATSYMBOL "-"
+#define NULLSYMBOL '\0'
+#define SPACESYMBOL ' '
+#define SPLITSYMBOL '>'
+
 Parser *CreateParserFromStream(FILE *stream) {
   Parser *this = (Parser *)malloc(sizeof(Parser));
 
-  this->root = '\0';
+  this->root = NULLSYMBOL;
 
   this->exprSize = 0;
 
   fseek(stream, 0, SEEK_END);
 
-  unsigned bufferSize = ftell(stream);
+  unsigned size = ftell(stream);
 
   rewind(stream);
 
-  char *buffer = (char *)malloc(bufferSize + 1);
+  char *buffer = (char *)malloc(size + 1);
 
-  fread(buffer, 1, bufferSize, stream);
+  fread(buffer, 1, size, stream);
 
-  buffer[bufferSize - 1] = '\0';
+  buffer[size - 1] = NULLSYMBOL;
 
   unsigned i = 0;
 
   unsigned j = 0;
 
-  while ('\0' != buffer[i]) {
-    if (' ' != buffer[i]) {
+  while (NULLSYMBOL != buffer[i]) {
+    if (SPACESYMBOL != buffer[i]) {
       buffer[j++] = buffer[i];
     }
 
     ++i;
   }
 
-  buffer[j] = '\0';
+  buffer[j] = NULLSYMBOL;
 
-  buffer = strtok(buffer, "-");
+  buffer = strtok(buffer, CONCATSYMBOL);
 
   do {
-    char *token = strchr(buffer, '>');
+    Symbol *symbol = strchr(buffer, SPLITSYMBOL);
 
-    *token = '\0';
+    *symbol = NULLSYMBOL;
 
-    if ('\0' == this->root) {
-      this->root = *(token - 1);
+    Symbol root = *(symbol - 1);
+
+    Symbol *symbols = symbol + 1;
+
+    if (NULLSYMBOL == this->root) {
+      this->root = root;
     }
 
-    Expr expr;
+    this->expr[this->exprSize] = (Expr){
+        .root = root,
+    };
 
-    expr.root = *(token - 1);
-
-    strcpy(expr.symbols, token + 1);
-
-    this->expr[this->exprSize] = expr;
+    strcpy(this->expr[this->exprSize].symbols, symbols);
 
     ++this->exprSize;
-  } while ((buffer = strtok(NULL, "-")));
+  } while ((buffer = strtok(NULL, CONCATSYMBOL)));
 
   return this;
 }

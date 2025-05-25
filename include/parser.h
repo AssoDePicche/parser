@@ -6,15 +6,17 @@
 #define MAX_EXPR 100
 #define MAX_SYMBOLS 100
 
+typedef char Symbol;
+
 typedef struct {
-  char root;
-  char symbols[MAX_SYMBOLS];
+  Symbol root;
+  Symbol symbols[MAX_SYMBOLS];
 } Expr;
 
 typedef struct {
   Expr expr[MAX_EXPR];
   unsigned exprSize;
-  char root;
+  Symbol root;
 } Parser;
 
 Parser *CreateParserFromStream(FILE *);
