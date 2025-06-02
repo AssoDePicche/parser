@@ -1,69 +1,153 @@
 #include "parser.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define CONCATSYMBOL "-"
 #define NULLSYMBOL '\0'
 #define SPACESYMBOL ' '
+#define CONCATSYMBOL "-"
 #define SPLITSYMBOL '>'
+#define NILSYMBOL '$'
 
-Parser *CreateParserFromStream(FILE *stream) {
-  Parser *this = (Parser *)malloc(sizeof(Parser));
+typedef struct {
+  char root;
+  char *symbols;
+} Expr;
 
-  this->root = NULLSYMBOL;
+typedef struct {
+  unsigned size;
+  unsigned capacity;
+  char *buffer;
+} Array;
 
-  this->exprSize = 0;
+static Array *CreateArray(const unsigned capacity) {
+  Array *this = (Array *)malloc(sizeof(Array));
 
+  this->size = 0;
+
+  this->capacity = capacity;
+
+  this->buffer = (char *)calloc(sizeof(char), capacity);
+
+  return this;
+}
+
+static void Push(Array *this, const char value) {
+  if (this->size == this->capacity) {
+    return;
+  }
+
+  for (unsigned index = 0; index < this->size; ++index) {
+    if (value == this->buffer[index]) {
+      return;
+    }
+  }
+
+  this->buffer[this->size] = value;
+
+  ++this->size;
+}
+
+bool ParseStream(FILE *stream) {
   fseek(stream, 0, SEEK_END);
 
-  unsigned size = ftell(stream);
+  const unsigned streamSize = ftell(stream);
 
   rewind(stream);
 
-  char *buffer = (char *)malloc(size + 1);
+  char *buffer = (char *)malloc(streamSize + 1);
 
-  fread(buffer, 1, size, stream);
+  fread(buffer, 1, streamSize, stream);
 
-  buffer[size - 1] = NULLSYMBOL;
+  buffer[streamSize - 1] = NULLSYMBOL;
 
-  unsigned i = 0;
+  unsigned current = 0;
 
-  unsigned j = 0;
+  unsigned previous = 0;
 
-  while (NULLSYMBOL != buffer[i]) {
-    if (SPACESYMBOL != buffer[i]) {
-      buffer[j++] = buffer[i];
+  while (NULLSYMBOL != buffer[current]) {
+    if (SPACESYMBOL != buffer[current]) {
+      buffer[previous++] = buffer[current];
     }
 
-    ++i;
+    ++current;
   }
 
-  buffer[j] = NULLSYMBOL;
+  buffer[previous] = NULLSYMBOL;
+
+  const char ROOT = buffer[0];
+
+  if (NULL == strchr(buffer, NILSYMBOL)) {
+    return false;
+  }
 
   buffer = strtok(buffer, CONCATSYMBOL);
 
+  Expr exprBuffer[1024];
+
+  unsigned exprSize = 0;
+
+  Array *nonterminal = CreateArray(25);
+
+  Array *terminal = CreateArray(25);
+
   do {
-    Symbol *symbol = strchr(buffer, SPLITSYMBOL);
+    char *expr = strchr(buffer, SPLITSYMBOL);
 
-    *symbol = NULLSYMBOL;
+    *expr = NULLSYMBOL;
 
-    Symbol root = *(symbol - 1);
+    char root = *(expr - 1);
 
-    Symbol *symbols = symbol + 1;
-
-    if (NULLSYMBOL == this->root) {
-      this->root = root;
+    if (!isupper(root)) {
+      return false;
     }
 
-    this->expr[this->exprSize] = (Expr){
+    Push(nonterminal, root);
+
+    char *symbols = expr + 1;
+
+    exprBuffer[exprSize] = (Expr){
         .root = root,
     };
 
-    strcpy(this->expr[this->exprSize].symbols, symbols);
+    exprBuffer[exprSize].symbols = (char *)malloc(strlen(symbols));
 
-    ++this->exprSize;
+    strcpy(exprBuffer[exprSize].symbols, symbols);
+
+    ++exprSize;
+
+    for (unsigned index = 0; index < strlen(symbols); ++index) {
+      if (isupper(symbols[index]) || NILSYMBOL == symbols[index]) {
+        continue;
+      }
+
+      Push(terminal, symbols[index]);
+    }
   } while ((buffer = strtok(NULL, CONCATSYMBOL)));
 
-  return this;
+  printf("G = ({");
+
+  for (unsigned index = 0; index < nonterminal->size - 1; ++index) {
+    printf("%c,", nonterminal->buffer[index]);
+  }
+
+  printf("%c}, {", nonterminal->buffer[nonterminal->size - 1]);
+
+  for (unsigned index = 0; index < terminal->size - 1; ++index) {
+    printf("%c,", terminal->buffer[index]);
+  }
+
+  printf("%c}, P, %c)\n", terminal->buffer[terminal->size - 1], ROOT);
+
+  printf("P = {");
+
+  for (unsigned index = 0; index < exprSize - 1; ++index) {
+    printf("%c -> %s, ", exprBuffer[index].root, exprBuffer[index].symbols);
+  }
+
+  printf("%c -> %s}\n", exprBuffer[exprSize - 1].root,
+         exprBuffer[exprSize - 1].symbols);
+
+  return true;
 }

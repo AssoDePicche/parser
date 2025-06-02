@@ -1,11 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "parser.h"
 
-int main(int argc, char **argv) {
+int main(const int argc, const char **argv) {
   if (2 != argc) {
-    fprintf(stderr, "%s", "You must provide the grammar file\n");
+    fprintf(stderr, "You must provide only the grammar file\n");
 
     return 1;
   }
@@ -13,17 +12,15 @@ int main(int argc, char **argv) {
   FILE *stream = fopen(argv[1], "r");
 
   if (NULL == stream) {
-    perror("The grammar file could not be read");
+    fprintf(stderr, "The grammar file '%s' could not be read", argv[1]);
 
     return 1;
   }
 
-  Parser *parser = CreateParserFromStream(stream);
-
-  free(parser);
+  printf("%s\n", ParseStream(stream) ? "Correct" : "Incorrect");
 
   if (EOF == fclose(stream)) {
-    perror("I/O error when closing the stream");
+    fprintf(stderr, "I/O error when closing the '%s' stream", argv[1]);
 
     return 1;
   }
