@@ -82,6 +82,19 @@ bool ParseStream(FILE *stream) {
     return false;
   }
 
+  for (unsigned index = 0; index < strlen(buffer); ++index) {
+    const bool isUpperCase = 65 <= buffer[index] && buffer[index] <= 90;
+
+    const bool isLowerCase = 97 <= buffer[index] && buffer[index] <= 122;
+
+    const bool isSpecialChar =
+        36 == buffer[index] || 45 == buffer[index] || 62 == buffer[index];
+
+    if (!(isUpperCase || isLowerCase || isSpecialChar)) {
+      return false;
+    }
+  }
+
   buffer = strtok(buffer, CONCATSYMBOL);
 
   Expr exprBuffer[1024];
