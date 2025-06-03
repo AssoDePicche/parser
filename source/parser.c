@@ -49,6 +49,10 @@ static void Push(Array *this, const char value) {
   ++this->size;
 }
 
+static bool isSpecialChar(const char character) {
+  return 36 == character || 45 == character || 62 == character;
+}
+
 bool ParseStream(FILE *stream) {
   fseek(stream, 0, SEEK_END);
 
@@ -87,10 +91,18 @@ bool ParseStream(FILE *stream) {
 
     const bool isLowerCase = 97 <= buffer[index] && buffer[index] <= 122;
 
-    const bool isSpecialChar =
-        36 == buffer[index] || 45 == buffer[index] || 62 == buffer[index];
+    if (!(isUpperCase || isLowerCase || isSpecialChar(buffer[index]))) {
+      return false;
+    }
+  }
 
-    if (!(isUpperCase || isLowerCase || isSpecialChar)) {
+  for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
+    if (!isSpecialChar(buffer[index]) ||
+        (buffer[index] == '>' && buffer[index + 1] == '$')) {
+      continue;
+    }
+
+    if (isSpecialChar(buffer[index - 1]) || isSpecialChar(buffer[index + 1])) {
       return false;
     }
   }
