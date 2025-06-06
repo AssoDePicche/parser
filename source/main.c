@@ -18,7 +18,7 @@ int main(const int argc, const char **argv) {
     return 1;
   }
 
-  printf("%s\n", ParseStream(stream) ? "Correct" : "Incorrect");
+  puts(ParseStream(stream) ? "Correct" : "Incorrect");
 
   if (EOF == fclose(stream)) {
     fprintf(stderr, "Error: I/O error when closing the '%s' stream\n", argv[1]);
