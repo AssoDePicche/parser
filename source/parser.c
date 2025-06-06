@@ -100,6 +100,10 @@ bool ParseStream(FILE *stream) {
 
   char ROOT = NULLSYMBOL;
 
+  Array *nonterminal = CreateArray(25);
+
+  Array *terminal = CreateArray(25);
+
   for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
     const char previous = buffer[index - 1];
 
@@ -123,6 +127,30 @@ bool ParseStream(FILE *stream) {
       fprintf(stderr, "Error: '%c' character not in the alphabet\n", next);
 
       return false;
+    }
+
+    if (isNonterminal(previous)) {
+      Push(nonterminal, previous);
+    }
+
+    if (isNonterminal(current)) {
+      Push(nonterminal, current);
+    }
+
+    if (isNonterminal(next)) {
+      Push(terminal, next);
+    }
+
+    if (isTerminal(previous)) {
+      Push(terminal, previous);
+    }
+
+    if (isTerminal(current)) {
+      Push(terminal, current);
+    }
+
+    if (isTerminal(next)) {
+      Push(terminal, next);
     }
 
     if (NULLSYMBOL == ROOT && isNonterminal(previous)) {
@@ -150,10 +178,6 @@ bool ParseStream(FILE *stream) {
 
   unsigned exprSize = 0;
 
-  Array *nonterminal = CreateArray(25);
-
-  Array *terminal = CreateArray(25);
-
   do {
     char *expr = strchr(buffer, SPLITSYMBOL);
 
@@ -167,8 +191,6 @@ bool ParseStream(FILE *stream) {
       return false;
     }
 
-    Push(nonterminal, root);
-
     char *symbols = expr + 1;
 
     exprBuffer[exprSize] = (Expr){
@@ -180,14 +202,6 @@ bool ParseStream(FILE *stream) {
     strcpy(exprBuffer[exprSize].symbols, symbols);
 
     ++exprSize;
-
-    for (unsigned index = 0; index < strlen(symbols); ++index) {
-      if (isNonterminal(symbols[index]) || NILSYMBOL == symbols[index]) {
-        continue;
-      }
-
-      Push(terminal, symbols[index]);
-    }
   } while ((buffer = strtok(NULL, CONCATSYMBOL)));
 
   printf("G = ({");
