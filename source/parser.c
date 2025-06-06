@@ -104,18 +104,14 @@ bool ParseStream(FILE *stream) {
 
   Array *terminal = CreateArray(25);
 
-  for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
-    const char previous = buffer[index - 1];
+  const unsigned BUFFERSIZE = strlen(buffer);
 
+  for (unsigned index = 0; index < BUFFERSIZE; ++index) {
     const char current = buffer[index];
 
-    const char next = buffer[index + 1];
+    const char previous = index > 0 ? buffer[index - 1] : current;
 
-    if (!inTheAlphabet(previous)) {
-      fprintf(stderr, "Error: '%c' character not in the alphabet\n", previous);
-
-      return false;
-    }
+    const char next = index < BUFFERSIZE - 1 ? buffer[index + 1] : current;
 
     if (!inTheAlphabet(current)) {
       fprintf(stderr, "Error: '%c' character not in the alphabet\n", current);
@@ -123,38 +119,20 @@ bool ParseStream(FILE *stream) {
       return false;
     }
 
-    if (!inTheAlphabet(next)) {
-      fprintf(stderr, "Error: '%c' character not in the alphabet\n", next);
-
-      return false;
-    }
-
-    if (isNonterminal(previous)) {
-      Push(nonterminal, previous);
-    }
-
     if (isNonterminal(current)) {
       Push(nonterminal, current);
-    }
-
-    if (isNonterminal(next)) {
-      Push(terminal, next);
-    }
-
-    if (isTerminal(previous)) {
-      Push(terminal, previous);
     }
 
     if (isTerminal(current)) {
       Push(terminal, current);
     }
 
-    if (isTerminal(next)) {
-      Push(terminal, next);
+    if (NULLSYMBOL == ROOT && isNonterminal(current)) {
+      ROOT = previous;
     }
 
-    if (NULLSYMBOL == ROOT && isNonterminal(previous)) {
-      ROOT = previous;
+    if (BUFFERSIZE - 1 == index) {
+      break;
     }
 
     if (!isSpecialChar(current) ||
@@ -166,7 +144,7 @@ bool ParseStream(FILE *stream) {
       fprintf(
           stderr,
           "Error: Cannot have '%c' or '%c' characters before or after '%c'\n",
-          buffer[index - 1], buffer[index + 1], buffer[index]);
+          previous, next, current);
 
       return false;
     }
