@@ -12,7 +12,7 @@ int main(const int argc, const char **argv) {
   FILE *stream = fopen(argv[1], "r");
 
   if (NULL == stream) {
-    fprintf(stderr, "The grammar file '%s' could not be read", argv[1]);
+    fprintf(stderr, "The grammar file '%s' could not be read\n", argv[1]);
 
     return 1;
   }
@@ -20,7 +20,7 @@ int main(const int argc, const char **argv) {
   printf("%s\n", ParseStream(stream) ? "Correct" : "Incorrect");
 
   if (EOF == fclose(stream)) {
-    fprintf(stderr, "I/O error when closing the '%s' stream", argv[1]);
+    fprintf(stderr, "I/O error when closing the '%s' stream\n", argv[1]);
 
     return 1;
   }
