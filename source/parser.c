@@ -1,6 +1,5 @@
 #include "parser.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,24 +48,21 @@ static void Push(Array *this, const char value) {
   ++this->size;
 }
 
-static bool inTheAlphabet(const char character) {
-  if (65 <= character && character <= 90) {
-    return true;
-  }
-
-  if (97 <= character && character <= 122) {
-    return true;
-  }
-
-  if (36 == character || 45 == character || 62 == character) {
-    return true;
-  }
-
-  return false;
-}
-
 static bool isSpecialChar(const char character) {
   return 36 == character || 45 == character || 62 == character;
+}
+
+static bool isNonterminal(const char character) {
+  return 65 <= character && character <= 90;
+}
+
+static bool isTerminal(const char character) {
+  return 97 <= character && character <= 122;
+}
+
+static bool inTheAlphabet(const char character) {
+  return isNonterminal(character) || isTerminal(character) ||
+         isSpecialChar(character);
 }
 
 bool ParseStream(FILE *stream) {
@@ -105,7 +101,7 @@ bool ParseStream(FILE *stream) {
   char ROOT = NULLSYMBOL;
 
   for (unsigned index = 0; index < strlen(buffer); ++index) {
-    if (NULLSYMBOL == ROOT && isupper(buffer[index])) {
+    if (NULLSYMBOL == ROOT && isNonterminal(buffer[index])) {
       ROOT = buffer[index];
 
       break;
@@ -154,7 +150,7 @@ bool ParseStream(FILE *stream) {
 
     char root = *(expr - 1);
 
-    if (!isupper(root)) {
+    if (!isNonterminal(root)) {
       fprintf(stderr, "Error: Root must be an upper case character\n");
 
       return false;
@@ -175,7 +171,7 @@ bool ParseStream(FILE *stream) {
     ++exprSize;
 
     for (unsigned index = 0; index < strlen(symbols); ++index) {
-      if (isupper(symbols[index]) || NILSYMBOL == symbols[index]) {
+      if (isNonterminal(symbols[index]) || NILSYMBOL == symbols[index]) {
         continue;
       }
 
