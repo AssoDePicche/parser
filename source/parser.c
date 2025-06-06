@@ -49,6 +49,22 @@ static void Push(Array *this, const char value) {
   ++this->size;
 }
 
+static bool inTheAlphabet(const char character) {
+  if (65 <= character && character <= 90) {
+    return true;
+  }
+
+  if (97 <= character && character <= 122) {
+    return true;
+  }
+
+  if (36 == character || 45 == character || 62 == character) {
+    return true;
+  }
+
+  return false;
+}
+
 static bool isSpecialChar(const char character) {
   return 36 == character || 45 == character || 62 == character;
 }
@@ -83,15 +99,16 @@ bool ParseStream(FILE *stream) {
   const char ROOT = buffer[0];
 
   if (NULL == strchr(buffer, NILSYMBOL)) {
+    fprintf(stderr, "Error: '$' not found on stream\n");
+
     return false;
   }
 
   for (unsigned index = 0; index < strlen(buffer); ++index) {
-    const bool isUpperCase = 65 <= buffer[index] && buffer[index] <= 90;
+    if (!inTheAlphabet(buffer[index])) {
+      fprintf(stderr, "Error: '%c' character not in the alphabet\n",
+              buffer[index]);
 
-    const bool isLowerCase = 97 <= buffer[index] && buffer[index] <= 122;
-
-    if (!(isUpperCase || isLowerCase || isSpecialChar(buffer[index]))) {
       return false;
     }
   }
@@ -103,6 +120,11 @@ bool ParseStream(FILE *stream) {
     }
 
     if (isSpecialChar(buffer[index - 1]) || isSpecialChar(buffer[index + 1])) {
+      fprintf(
+          stderr,
+          "Error: Cannot have '%c' or '%c' characters before or after '%c'\n",
+          buffer[index - 1], buffer[index + 1], buffer[index]);
+
       return false;
     }
   }
@@ -125,6 +147,8 @@ bool ParseStream(FILE *stream) {
     char root = *(expr - 1);
 
     if (!isupper(root)) {
+      fprintf(stderr, "Error: Root must be an upper case character\n");
+
       return false;
     }
 
