@@ -186,28 +186,20 @@ bool ParseStream(FILE *stream) {
       return false;
     }
 
-    exprBuffer[exprSize].root = (char *)malloc(strlen(buffer));
+    exprBuffer[exprSize].root = strdup(buffer);
 
-    strcpy(exprBuffer[exprSize].root, buffer);
-
-    exprBuffer[exprSize].symbols = (char *)malloc(strlen(expression + 1));
-
-    strcpy(exprBuffer[exprSize].symbols, expression + 1);
+    exprBuffer[exprSize].symbols = strdup(expression + 1);
 
     ++exprSize;
   }
 
   printf("G = ({");
 
-  for (uint64_t index = 0; index < nonterminal->size; ++index) {
-    if (terminal->size - 1 != index) {
-      printf("%c,", nonterminal->buffer[index]);
-
-      continue;
-    }
-
-    printf("%c}, {", nonterminal->buffer[index]);
+  for (uint64_t index = 0; index < nonterminal->size - 1; ++index) {
+    printf("%c,", nonterminal->buffer[index]);
   }
+
+  printf("%c}, {", nonterminal->buffer[nonterminal->size - 1]);
 
   for (uint64_t index = 0; index < terminal->size; ++index) {
     if (terminal->size - 1 != index) {
