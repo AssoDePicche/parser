@@ -199,26 +199,35 @@ bool ParseStream(FILE *stream) {
 
   printf("G = ({");
 
-  for (uint64_t index = 0; index < nonterminal->size - 1; ++index) {
-    printf("%c,", nonterminal->buffer[index]);
+  for (uint64_t index = 0; index < nonterminal->size; ++index) {
+    if (terminal->size - 1 != index) {
+      printf("%c,", nonterminal->buffer[index]);
+
+      continue;
+    }
+
+    printf("%c}, {", nonterminal->buffer[index]);
   }
 
-  printf("%c}, {", nonterminal->buffer[nonterminal->size - 1]);
+  for (uint64_t index = 0; index < terminal->size; ++index) {
+    if (terminal->size - 1 != index) {
+      printf("%c,", terminal->buffer[index]);
 
-  for (uint64_t index = 0; index < terminal->size - 1; ++index) {
-    printf("%c,", terminal->buffer[index]);
+      continue;
+    }
+
+    printf("%c}, P, %c)\nP = {", terminal->buffer[index], ROOT);
   }
 
-  printf("%c}, P, %c)\n", terminal->buffer[terminal->size - 1], ROOT);
+  for (uint64_t index = 0; index < exprSize; ++index) {
+    if (exprSize - 1 != index) {
+      printf("%s -> %s, ", exprBuffer[index].root, exprBuffer[index].symbols);
 
-  printf("P = {");
+      continue;
+    }
 
-  for (uint64_t index = 0; index < exprSize - 1; ++index) {
-    printf("%s -> %s, ", exprBuffer[index].root, exprBuffer[index].symbols);
+    printf("%s -> %s}\n", exprBuffer[index].root, exprBuffer[index].symbols);
   }
-
-  printf("%s -> %s}\n", exprBuffer[exprSize - 1].root,
-         exprBuffer[exprSize - 1].symbols);
 
   return true;
 }
