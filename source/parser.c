@@ -65,7 +65,7 @@ static bool inTheAlphabet(const char character) {
          isSpecialChar(character);
 }
 
-bool ParseStream(FILE *stream) {
+static char *StreamAsString(FILE *stream) {
   fseek(stream, 0, SEEK_END);
 
   const unsigned streamSize = ftell(stream);
@@ -91,6 +91,12 @@ bool ParseStream(FILE *stream) {
   }
 
   buffer[previous] = NULLSYMBOL;
+
+  return buffer;
+}
+
+bool ParseStream(FILE *stream) {
+  char *buffer = StreamAsString(stream);
 
   if (NULL == strchr(buffer, NILSYMBOL)) {
     fprintf(stderr, "Error: '$' not found on stream\n");
@@ -128,7 +134,7 @@ bool ParseStream(FILE *stream) {
     }
 
     if (NULLSYMBOL == ROOT && isNonterminal(current)) {
-      ROOT = previous;
+      ROOT = current;
     }
 
     if (BUFFERSIZE - 1 == index) {
@@ -161,19 +167,28 @@ bool ParseStream(FILE *stream) {
 
     *expr = NULLSYMBOL;
 
-    char root = *(expr - 1);
+    char *root = (expr - 1);
 
-    if (!isNonterminal(root)) {
-      fprintf(stderr, "Error: Root must be an upper case character\n");
+    unsigned nonterminalSymbols = 0;
+
+    for (unsigned index = 0; index < strlen(root); ++index) {
+      if (isNonterminal(root[index])) {
+        ++nonterminalSymbols;
+      }
+    }
+
+    if (0 == nonterminalSymbols) {
+      fprintf(stderr,
+              "Error: Root must contains at least one nonterminal character\n");
 
       return false;
     }
 
     char *symbols = expr + 1;
 
-    exprBuffer[exprSize] = (Expr){
-        .root = root,
-    };
+    exprBuffer[exprSize] = (Expr){};
+
+    exprBuffer[exprSize].root = *root;
 
     exprBuffer[exprSize].symbols = (char *)malloc(strlen(symbols));
 
