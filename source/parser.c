@@ -96,12 +96,20 @@ bool ParseStream(FILE *stream) {
 
   buffer[previous] = NULLSYMBOL;
 
-  const char ROOT = buffer[0];
-
   if (NULL == strchr(buffer, NILSYMBOL)) {
     fprintf(stderr, "Error: '$' not found on stream\n");
 
     return false;
+  }
+
+  char ROOT = NULLSYMBOL;
+
+  for (unsigned index = 0; index < strlen(buffer); ++index) {
+    if (NULLSYMBOL == ROOT && isupper(buffer[index])) {
+      ROOT = buffer[index];
+
+      break;
+    }
   }
 
   for (unsigned index = 0; index < strlen(buffer); ++index) {
@@ -115,7 +123,7 @@ bool ParseStream(FILE *stream) {
 
   for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
     if (!isSpecialChar(buffer[index]) ||
-        (buffer[index] == '>' && buffer[index + 1] == '$')) {
+        (SPLITSYMBOL == buffer[index] && NILSYMBOL == buffer[index + 1])) {
       continue;
     }
 
