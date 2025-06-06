@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,19 +9,20 @@
 #define CONCATSYMBOL "-"
 #define SPLITSYMBOL '>'
 #define NILSYMBOL '$'
+#define SPLIT(buffer) strtok(buffer, CONCATSYMBOL)
 
 typedef struct {
-  char root;
+  char *root;
   char *symbols;
 } Expr;
 
 typedef struct {
-  unsigned size;
-  unsigned capacity;
+  uint64_t size;
+  uint64_t capacity;
   char *buffer;
 } Array;
 
-static Array *CreateArray(const unsigned capacity) {
+static Array *CreateArray(const uint64_t capacity) {
   Array *this = (Array *)malloc(sizeof(Array));
 
   this->size = 0;
@@ -37,7 +39,7 @@ static void Push(Array *this, const char value) {
     return;
   }
 
-  for (unsigned index = 0; index < this->size; ++index) {
+  for (uint64_t index = 0; index < this->size; ++index) {
     if (value == this->buffer[index]) {
       return;
     }
@@ -68,7 +70,7 @@ static bool inTheAlphabet(const char character) {
 static char *StreamAsString(FILE *stream) {
   fseek(stream, 0, SEEK_END);
 
-  const unsigned streamSize = ftell(stream);
+  const uint64_t streamSize = ftell(stream);
 
   rewind(stream);
 
@@ -78,9 +80,9 @@ static char *StreamAsString(FILE *stream) {
 
   buffer[streamSize - 1] = NULLSYMBOL;
 
-  unsigned current = 0;
+  uint64_t current = 0;
 
-  unsigned previous = 0;
+  uint64_t previous = 0;
 
   while (NULLSYMBOL != buffer[current]) {
     if (SPACESYMBOL != buffer[current]) {
@@ -110,9 +112,9 @@ bool ParseStream(FILE *stream) {
 
   Array *terminal = CreateArray(25);
 
-  const unsigned BUFFERSIZE = strlen(buffer);
+  const uint64_t BUFFERSIZE = strlen(buffer);
 
-  for (unsigned index = 0; index < BUFFERSIZE; ++index) {
+  for (uint64_t index = 0; index < BUFFERSIZE; ++index) {
     const char current = buffer[index];
 
     const char previous = index > 0 ? buffer[index - 1] : current;
@@ -156,23 +158,23 @@ bool ParseStream(FILE *stream) {
     }
   }
 
-  buffer = strtok(buffer, CONCATSYMBOL);
-
   Expr exprBuffer[1024];
 
-  unsigned exprSize = 0;
+  uint64_t exprSize = 0;
 
-  do {
-    char *expr = strchr(buffer, SPLITSYMBOL);
+  for (buffer = SPLIT(buffer); NULL != buffer; buffer = SPLIT(NULL)) {
+    char *expression = strchr(buffer, SPLITSYMBOL);
 
-    *expr = NULLSYMBOL;
+    if (NULL == expression) {
+      fprintf(stderr, "Error: Cannot parse expression\n");
+    }
 
-    char *root = (expr - 1);
+    *expression = NULLSYMBOL;
 
-    unsigned nonterminalSymbols = 0;
+    uint64_t nonterminalSymbols = 0;
 
-    for (unsigned index = 0; index < strlen(root); ++index) {
-      if (isNonterminal(root[index])) {
+    for (uint64_t index = 0; index < strlen(buffer); ++index) {
+      if (isNonterminal(buffer[index])) {
         ++nonterminalSymbols;
       }
     }
@@ -184,28 +186,26 @@ bool ParseStream(FILE *stream) {
       return false;
     }
 
-    char *symbols = expr + 1;
+    exprBuffer[exprSize].root = (char *)malloc(strlen(buffer));
 
-    exprBuffer[exprSize] = (Expr){};
+    strcpy(exprBuffer[exprSize].root, buffer);
 
-    exprBuffer[exprSize].root = *root;
+    exprBuffer[exprSize].symbols = (char *)malloc(strlen(expression + 1));
 
-    exprBuffer[exprSize].symbols = (char *)malloc(strlen(symbols));
-
-    strcpy(exprBuffer[exprSize].symbols, symbols);
+    strcpy(exprBuffer[exprSize].symbols, expression + 1);
 
     ++exprSize;
-  } while ((buffer = strtok(NULL, CONCATSYMBOL)));
+  }
 
   printf("G = ({");
 
-  for (unsigned index = 0; index < nonterminal->size - 1; ++index) {
+  for (uint64_t index = 0; index < nonterminal->size - 1; ++index) {
     printf("%c,", nonterminal->buffer[index]);
   }
 
   printf("%c}, {", nonterminal->buffer[nonterminal->size - 1]);
 
-  for (unsigned index = 0; index < terminal->size - 1; ++index) {
+  for (uint64_t index = 0; index < terminal->size - 1; ++index) {
     printf("%c,", terminal->buffer[index]);
   }
 
@@ -213,11 +213,11 @@ bool ParseStream(FILE *stream) {
 
   printf("P = {");
 
-  for (unsigned index = 0; index < exprSize - 1; ++index) {
-    printf("%c -> %s, ", exprBuffer[index].root, exprBuffer[index].symbols);
+  for (uint64_t index = 0; index < exprSize - 1; ++index) {
+    printf("%s -> %s, ", exprBuffer[index].root, exprBuffer[index].symbols);
   }
 
-  printf("%c -> %s}\n", exprBuffer[exprSize - 1].root,
+  printf("%s -> %s}\n", exprBuffer[exprSize - 1].root,
          exprBuffer[exprSize - 1].symbols);
 
   return true;
