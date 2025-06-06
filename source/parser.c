@@ -100,30 +100,41 @@ bool ParseStream(FILE *stream) {
 
   char ROOT = NULLSYMBOL;
 
-  for (unsigned index = 0; index < strlen(buffer); ++index) {
-    if (NULLSYMBOL == ROOT && isNonterminal(buffer[index])) {
-      ROOT = buffer[index];
+  for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
+    const char previous = buffer[index - 1];
 
-      break;
-    }
-  }
+    const char current = buffer[index];
 
-  for (unsigned index = 0; index < strlen(buffer); ++index) {
-    if (!inTheAlphabet(buffer[index])) {
-      fprintf(stderr, "Error: '%c' character not in the alphabet\n",
-              buffer[index]);
+    const char next = buffer[index + 1];
+
+    if (!inTheAlphabet(previous)) {
+      fprintf(stderr, "Error: '%c' character not in the alphabet\n", previous);
 
       return false;
     }
-  }
 
-  for (unsigned index = 1; index < strlen(buffer) - 1; ++index) {
-    if (!isSpecialChar(buffer[index]) ||
-        (SPLITSYMBOL == buffer[index] && NILSYMBOL == buffer[index + 1])) {
+    if (!inTheAlphabet(current)) {
+      fprintf(stderr, "Error: '%c' character not in the alphabet\n", current);
+
+      return false;
+    }
+
+    if (!inTheAlphabet(next)) {
+      fprintf(stderr, "Error: '%c' character not in the alphabet\n", next);
+
+      return false;
+    }
+
+    if (NULLSYMBOL == ROOT && isNonterminal(previous)) {
+      ROOT = previous;
+    }
+
+    if (!isSpecialChar(current) ||
+        (SPLITSYMBOL == current && NILSYMBOL == next)) {
       continue;
     }
 
-    if (isSpecialChar(buffer[index - 1]) || isSpecialChar(buffer[index + 1])) {
+    if (isSpecialChar(previous) || isSpecialChar(next)) {
       fprintf(
           stderr,
           "Error: Cannot have '%c' or '%c' characters before or after '%c'\n",
