@@ -34,12 +34,13 @@ Correct
 Para um arquivo como abaixo:
 
 ```txt
-S > aS - S > bSb - S > c - S > A - S > $
+S > aSa - S > bSb - S > c - A > $
 ```
 
 A saída é esta:
 
 ```bash
+Error: Poorly formatted production rules
 Incorrect
 ```
 
