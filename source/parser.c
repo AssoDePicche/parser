@@ -19,6 +19,40 @@ typedef struct {
 typedef struct {
   uint64_t size;
   uint64_t capacity;
+  Expr *buffer;
+} ExprBuffer;
+
+static ExprBuffer *CreateExprBuffer(const uint64_t capacity) {
+  ExprBuffer *this = (ExprBuffer *)malloc(sizeof(ExprBuffer));
+
+  this->size = 0;
+
+  this->capacity = capacity;
+
+  this->buffer = (Expr *)calloc(sizeof(Expr), capacity);
+
+  return this;
+}
+
+static void PushExpr(ExprBuffer *this, Expr expr) {
+  for (uint64_t index = 0; index < this->size; ++index) {
+    if (0 != strcmp(this->buffer[index].root, expr.root)) {
+      continue;
+    }
+
+    if (0 == strcmp(this->buffer[index].symbols, expr.symbols)) {
+      return;
+    }
+  }
+
+  this->buffer[this->size] = expr;
+
+  ++this->size;
+}
+
+typedef struct {
+  uint64_t size;
+  uint64_t capacity;
   char *buffer;
 } Array;
 
@@ -65,6 +99,20 @@ static bool isTerminal(const char character) {
 static bool inTheAlphabet(const char character) {
   return isNonterminal(character) || isTerminal(character) ||
          isSpecialChar(character);
+}
+
+static ExprBuffer *getDerivedExpressions(const Expr *expr,
+                                         const uint64_t exprSize,
+                                         const char *root) {
+  ExprBuffer *buffer = CreateExprBuffer(10);
+
+  for (uint64_t index = 0; index < exprSize; ++index) {
+    if (0 == strcmp(expr[index].root, root)) {
+      PushExpr(buffer, expr[index]);
+    }
+  }
+
+  return buffer;
 }
 
 static char *StreamAsString(FILE *stream) {
@@ -191,6 +239,34 @@ bool ParseStream(FILE *stream) {
     exprBuffer[exprSize].symbols = strdup(expression + 1);
 
     ++exprSize;
+  }
+
+  for (uint64_t i = 0; i < exprSize; ++i) {
+    for (uint64_t j = 0; j < strlen(exprBuffer[i].root); ++j) {
+      ExprBuffer *matches =
+          getDerivedExpressions(exprBuffer, exprSize, &exprBuffer[i].root[j]);
+
+      if (NULL == matches) {
+        continue;
+      }
+
+      bool find = false;
+
+      for (uint64_t k = 0; k < matches->size; ++k) {
+        if (NULL != strchr(matches->buffer[k].symbols, NILSYMBOL)) {
+          find = true;
+          break;
+        }
+      }
+
+      free(matches);
+
+      if (!find) {
+        fprintf(stderr, "Error: Poorly formatted production rules\n");
+
+        return false;
+      }
+    }
   }
 
   printf("G = ({");
